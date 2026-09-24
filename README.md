@@ -59,8 +59,9 @@ Adds two secondary fields while keeping the existing Solana epoch UI:
   (`Toybox.Weather.getCurrentConditions()`), rendered in the device's temperature units
   (`System.getDeviceSettings().temperatureUnits`). Shows `--` when no conditions are available.
 
-Branding: the Solana logomark (three stacked purple parallelograms) is drawn above the date
-line, centred, sized for the fenix 6/Enduro MIP displays, without covering the progress ring.
+Branding: the official Solana logomark (gradient “S” bars from `solanaLogoMark` on
+`https://solana.com/branding`) is drawn above the date line, centred, sized for the
+fenix 6/Enduro MIP displays, without covering the progress ring.
 
 Permissions: `manifest.xml` includes `Positioning` so Garmin Weather can expose a station/location
 when available. No additional permission is required for heart rate on a watch face.
