@@ -19,6 +19,10 @@ import Toybox.System;
 import Toybox.Time;
 import Toybox.Time.Gregorian;
 import Toybox.WatchUi;
+import Toybox.Activity;
+import Toybox.ActivityMonitor;
+import Toybox.Weather;
+import Toybox.Math;
 
 class SolanaEpochView extends WatchUi.WatchFace {
 
@@ -233,6 +237,66 @@ class SolanaEpochView extends WatchUi.WatchFace {
         var statusHeight = Graphics.getFontHeight(Graphics.FONT_XTINY);
         drawRow(dc, centreX, rowTop + statusHeight / 2, Graphics.FONT_XTINY,
             status, statusColor);
+        // ---- Secondary fields: Heart rate (left) and Weather (right) -------------
+        var smallFont = Graphics.FONT_XTINY;
+        var smallHeight = Graphics.getFontHeight(smallFont);
+        var extrasY = rowTop + smallHeight / 2 + gap;
+
+        // Heart rate: prefer Activity.Info.currentHeartRate; fall back to last history sample.
+        var hrText = "--" as String;
+        var actInfo = Activity.getActivityInfo();
+        if (actInfo != null) {
+            var curHr = actInfo.currentHeartRate;
+            if (curHr instanceof Number) {
+                hrText = (curHr as Number).format("%d");
+            }
+        }
+        if (hrText == "--") {
+            var itr = ActivityMonitor.getHeartRateHistory(1, true);
+            if (itr != null) {
+                var sample = itr.next();
+                if (sample != null) {
+                    var sHr = sample.heartRate;
+                    if (sHr instanceof Number && (sHr as Number) != ActivityMonitor.INVALID_HR_SAMPLE) {
+                        hrText = (sHr as Number).format("%d");
+                    }
+                }
+            }
+        }
+
+        // Weather: temperature from Garmin Weather cache (Celsius by default).
+        var weatherText = "--" as String;
+        var cc = Weather.getCurrentConditions();
+        if (cc != null) {
+            var t = cc.temperature;
+            var tempC = 0.0 as Float;
+            var haveTemp = false;
+            if (t instanceof Float) {
+                tempC = t as Float;
+                haveTemp = true;
+            } else if (t instanceof Number) {
+                tempC = (t as Number).toFloat();
+                haveTemp = true;
+            }
+            if (haveTemp) {
+                var units = System.getDeviceSettings().temperatureUnits;
+                var disp = tempC;
+                if (units == System.UNIT_STATUTE) {
+                    disp = tempC * 9.0 / 5.0 + 32.0;
+                }
+                var ti = Math.round(disp).toNumber();
+                weatherText = ti.format("%d") + "°";
+            }
+        }
+
+        // Draw aligned near the edges so they do not cover the ring.
+        var pad = width / 14;
+        if (pad < 10) {
+            pad = 10;
+        }
+        dc.setColor($.Se.COLOR_SECONDARY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(pad, extrasY - smallHeight / 2, smallFont, "HR " + hrText, Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(width - pad, extrasY - smallHeight / 2, smallFont, weatherText, Graphics.TEXT_JUSTIFY_RIGHT);
     }
 
     //! Draw one centre-justified row of text.
