@@ -66,6 +66,14 @@ fenix 6/Enduro MIP displays, without covering the progress ring.
 Permissions: `manifest.xml` includes `Positioning` so Garmin Weather can expose a station/location
 when available. No additional permission is required for heart rate on a watch face.
 
+### Dark Solana branding (gradient + white logo)
+
+- Toggle in Settings: enable “Dark Solana branding” to use the Solana gradient background with
+  the white Solana mark above the date. The epoch UI, HR (left) and weather temperature (right)
+  remain unchanged.
+- Enduro build: same release binary; no separate target is needed. Build as usual (see
+  “Building for Enduro”), then turn on the setting on device (Garmin Express for sideloaded).
+
 ## Data flow
 
 A watch face cannot make HTTP requests from the foreground, so:
