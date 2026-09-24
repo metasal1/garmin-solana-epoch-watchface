@@ -396,7 +396,10 @@ class SolanaEpochView extends WatchUi.WatchFace {
         var bestDiff = 9999.0;
         for (var i = 0; i < candidates.size(); i += 1) {
             var c = (candidates[i] as Number).toFloat();
-            var d = Math.abs(c - v);
+            var d = c - v;
+            if (d < 0.0) {
+                d = -d;
+            }
             if (d < bestDiff) {
                 bestDiff = d;
                 best = candidates[i] as Number;
