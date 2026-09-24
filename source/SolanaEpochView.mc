@@ -160,7 +160,7 @@ class SolanaEpochView extends WatchUi.WatchFace {
         if (isDark) {
             // Try a bitmap gradient first (per-size). Fall back to a procedural gradient.
             var bg = null as WatchUi.BitmapResource?;
-            var bgRes = null as WatchUi.Resource?;
+            var bgRes = null as Object?;
             if (width >= 280) {
                 // No 280 asset provided in this repo; fall back to procedural.
                 bg = null;
@@ -215,7 +215,7 @@ class SolanaEpochView extends WatchUi.WatchFace {
         var dateY = centreY - (height * 0.27).toNumber();
         do {
             // Draw the project mark above the date, centred, kept clear of the ring.
-            var res = null as WatchUi.Resource?;
+            var res = null as Object?;
             if (isDark) {
                 res = WatchUi.loadResource(width >= 280 ? Rez.Drawables.SolanaLogoWhite64
                                                         : Rez.Drawables.SolanaLogoWhite48);
@@ -385,8 +385,12 @@ class SolanaEpochView extends WatchUi.WatchFace {
     //! Snap one 0..255 component to the nearest of 00/55/AA/FF.
     private function snapToPalette(value as Float) as Number {
         var v = value;
-        if (v < 0.0) v = 0.0;
-        if (v > 255.0) v = 255.0;
+        if (v < 0.0) {
+            v = 0.0;
+        }
+        if (v > 255.0) {
+            v = 255.0;
+        }
         var candidates = [0, 85, 170, 255];
         var best = 0;
         var bestDiff = 9999.0;
