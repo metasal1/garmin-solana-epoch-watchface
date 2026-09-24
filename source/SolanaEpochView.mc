@@ -158,25 +158,8 @@ class SolanaEpochView extends WatchUi.WatchFace {
         // ---- Background and ring -------------------------------------------------
         var isDark = $.Se.darkVariant();
         if (isDark) {
-            // Try a bitmap gradient first (per-size). Fall back to a procedural gradient.
-            var bg = null as WatchUi.BitmapResource?;
-            var bgRes = null as Object?;
-            if (width >= 280) {
-                // No 280 asset provided in this repo; fall back to procedural.
-                bg = null;
-            } else if (width >= 260) {
-                bgRes = WatchUi.loadResource(Rez.Drawables.BgSolanaGradient260);
-            } else {
-                bgRes = WatchUi.loadResource(Rez.Drawables.BgSolanaGradient240);
-            }
-            if (bgRes instanceof WatchUi.BitmapResource) {
-                bg = bgRes as WatchUi.BitmapResource;
-            }
-            if (bg != null) {
-                dc.drawBitmap(0, 0, bg as WatchUi.BitmapResource);
-            } else {
-                drawSolanaGradient(dc, width, height);
-            }
+            // Procedural gradient only to keep memory budget small on Enduro.
+            drawSolanaGradient(dc, width, height);
         } else {
             dc.setColor($.Se.COLOR_BG, $.Se.COLOR_BG);
             dc.clear();
@@ -217,8 +200,8 @@ class SolanaEpochView extends WatchUi.WatchFace {
             // Draw the project mark above the date, centred, kept clear of the ring.
             var res = null as Object?;
             if (isDark) {
-                res = WatchUi.loadResource(width >= 280 ? Rez.Drawables.SolanaLogoWhite64
-                                                        : Rez.Drawables.SolanaLogoWhite48);
+                // Single small white logo to minimise resource size.
+                res = WatchUi.loadResource(Rez.Drawables.SolanaLogoWhite48);
             } else {
                 res = WatchUi.loadResource(Rez.Drawables.SolanaLogo);
             }
