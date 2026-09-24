@@ -188,8 +188,23 @@ class SolanaEpochView extends WatchUi.WatchFace {
         // assumed font metric can overlap two rows.
         var clockInfo = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);
 
-        drawRow(dc, centreX, centreY - (height * 0.27).toNumber(),
-            Graphics.FONT_XTINY, dateString(clockInfo), $.Se.COLOR_SECONDARY);
+        // Top row (date), with a small logo above it.
+        var dateY = centreY - (height * 0.27).toNumber();
+        do {
+            // Draw the project mark above the date, centred, kept clear of the ring.
+            var logo = WatchUi.loadResource(Rez.Drawables.LauncherIcon);
+            if (logo != null) {
+                var lw = logo.getWidth();
+                var lh = logo.getHeight();
+                var xLeft = centreX - lw / 2;
+                var yTop = dateY - (width / 70) - lh; // one gap above the date
+                if (yTop < 2) {
+                    yTop = 2;
+                }
+                dc.drawBitmap(xLeft, yTop, logo);
+            }
+        } while (false);
+        drawRow(dc, centreX, dateY, Graphics.FONT_XTINY, dateString(clockInfo), $.Se.COLOR_SECONDARY);
 
         // FIRST THING TO CHECK ON REAL HARDWARE: the clock's vertical placement.
         // FONT_NUMBER_* glyph boxes are reported to carry more padding above the ascent
