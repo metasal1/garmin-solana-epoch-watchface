@@ -155,9 +155,32 @@ class SolanaEpochView extends WatchUi.WatchFace {
             }
         }
 
-        // ---- Ring -----------------------------------------------------------------
-        dc.setColor($.Se.COLOR_BG, $.Se.COLOR_BG);
-        dc.clear();
+        // ---- Background and ring -------------------------------------------------
+        var isDark = $.Se.darkVariant();
+        if (isDark) {
+            // Try a bitmap gradient first (per-size). Fall back to a procedural gradient.
+            var bg = null as WatchUi.BitmapResource?;
+            var bgRes = null as WatchUi.Resource?;
+            if (width >= 280) {
+                // No 280 asset provided in this repo; fall back to procedural.
+                bg = null;
+            } else if (width >= 260) {
+                bgRes = WatchUi.loadResource(Rez.Drawables.BgSolanaGradient260);
+            } else {
+                bgRes = WatchUi.loadResource(Rez.Drawables.BgSolanaGradient240);
+            }
+            if (bgRes instanceof WatchUi.BitmapResource) {
+                bg = bgRes as WatchUi.BitmapResource;
+            }
+            if (bg != null) {
+                dc.drawBitmap(0, 0, bg as WatchUi.BitmapResource);
+            } else {
+                drawSolanaGradient(dc, width, height);
+            }
+        } else {
+            dc.setColor($.Se.COLOR_BG, $.Se.COLOR_BG);
+            dc.clear();
+        }
         dc.setPenWidth(penWidth);
         dc.setColor($.Se.COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
         dc.drawCircle(centreX, centreY, radius);
@@ -168,7 +191,7 @@ class SolanaEpochView extends WatchUi.WatchFace {
             // Full circle. Also the only safe way to render a sweep that rounds up to
             // 360: drawArc() with equal start and end angles draws a complete circle,
             // so feeding it 90..90 would be indistinguishable from "no progress at all".
-            dc.setColor(_accent, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(isDark ? $.Se.COLOR_PRIMARY : _accent, Graphics.COLOR_TRANSPARENT);
             dc.drawCircle(centreX, centreY, radius);
         } else if (sweep > 0) {
             // 0 degrees is 3 o'clock, so 12 o'clock is 90 and clockwise means counting
@@ -177,7 +200,7 @@ class SolanaEpochView extends WatchUi.WatchFace {
             if (endDegree < 0) {
                 endDegree += 360;
             }
-            dc.setColor(_accent, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(isDark ? $.Se.COLOR_PRIMARY : _accent, Graphics.COLOR_TRANSPARENT);
             dc.drawArc(centreX, centreY, radius, Graphics.ARC_CLOCKWISE, 90, endDegree);
         }
         dc.setPenWidth(1);
@@ -192,7 +215,13 @@ class SolanaEpochView extends WatchUi.WatchFace {
         var dateY = centreY - (height * 0.27).toNumber();
         do {
             // Draw the project mark above the date, centred, kept clear of the ring.
-            var res = WatchUi.loadResource(Rez.Drawables.SolanaLogo);
+            var res = null as WatchUi.Resource?;
+            if (isDark) {
+                res = WatchUi.loadResource(width >= 280 ? Rez.Drawables.SolanaLogoWhite64
+                                                        : Rez.Drawables.SolanaLogoWhite48);
+            } else {
+                res = WatchUi.loadResource(Rez.Drawables.SolanaLogo);
+            }
             var bmp = null as WatchUi.BitmapResource?;
             if (res instanceof WatchUi.BitmapResource) {
                 bmp = res as WatchUi.BitmapResource;
@@ -208,7 +237,8 @@ class SolanaEpochView extends WatchUi.WatchFace {
                 dc.drawBitmap(xLeft, yTop, bmp as WatchUi.BitmapResource);
             }
         } while (false);
-        drawRow(dc, centreX, dateY, Graphics.FONT_XTINY, dateString(clockInfo), $.Se.COLOR_SECONDARY);
+        drawRow(dc, centreX, dateY, Graphics.FONT_XTINY, dateString(clockInfo),
+            isDark ? $.Se.COLOR_PRIMARY : $.Se.COLOR_SECONDARY);
 
         // FIRST THING TO CHECK ON REAL HARDWARE: the clock's vertical placement.
         // FONT_NUMBER_* glyph boxes are reported to carry more padding above the ascent
@@ -223,7 +253,8 @@ class SolanaEpochView extends WatchUi.WatchFace {
 
         var epochHeight = Graphics.getFontHeight(Graphics.FONT_SMALL);
         drawRow(dc, centreX, rowTop + epochHeight / 2, Graphics.FONT_SMALL,
-            _haveData ? "EPOCH " + _epoch.format("%d") : "EPOCH --", _accent);
+            _haveData ? "EPOCH " + _epoch.format("%d") : "EPOCH --",
+            isDark ? $.Se.COLOR_PRIMARY : _accent);
         rowTop += epochHeight + gap;
 
         var countdown = "no data";
@@ -334,6 +365,40 @@ class SolanaEpochView extends WatchUi.WatchFace {
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
         dc.drawText(centreX, yCentre - Graphics.getFontHeight(font) / 2, font, text,
             Graphics.TEXT_JUSTIFY_CENTER);
+    }
+    //! Draw a vertical Solana-style gradient (approximate, palette-snapped).
+    //! Top = green/teal, bottom = purple.
+    private function drawSolanaGradient(dc as Dc, width as Number, height as Number) as Void {
+        // Start/end colours approximated to the fenix 6 64-colour palette.
+        var topR = 0x00, topG = 0xFF, topB = 0xAA;
+        var botR = 0xAA, botG = 0x55, botB = 0xFF;
+        for (var y = 0; y < height; y += 1) {
+            var t = y.toFloat() / (height - 1).toFloat();
+            var r = snapToPalette(botR + (topR - botR) * (1.0 - t));
+            var g = snapToPalette(botG + (topG - botG) * (1.0 - t));
+            var b = snapToPalette(botB + (topB - botB) * (1.0 - t));
+            var color = (r << 16) + (g << 8) + b;
+            dc.setColor(color, color);
+            dc.drawLine(0, y, width - 1, y);
+        }
+    }
+    //! Snap one 0..255 component to the nearest of 00/55/AA/FF.
+    private function snapToPalette(value as Float) as Number {
+        var v = value;
+        if (v < 0.0) v = 0.0;
+        if (v > 255.0) v = 255.0;
+        var candidates = [0, 85, 170, 255];
+        var best = 0;
+        var bestDiff = 9999.0;
+        for (var i = 0; i < candidates.size(); i += 1) {
+            var c = (candidates[i] as Number).toFloat();
+            var d = Math.abs(c - v);
+            if (d < bestDiff) {
+                bestDiff = d;
+                best = candidates[i] as Number;
+            }
+        }
+        return best;
     }
 
     //! Format the date line, e.g. "THU 18 SEP".

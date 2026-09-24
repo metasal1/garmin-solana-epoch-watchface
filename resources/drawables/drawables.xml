@@ -2,4 +2,8 @@
 <drawables>
     <bitmap id="LauncherIcon" filename="launcher_icon.png" />
     <bitmap id="SolanaLogo" filename="solana_logo.png" />
+    <bitmap id="SolanaLogoWhite48" filename="solana_logo_white_48.png" />
+    <bitmap id="SolanaLogoWhite64" filename="solana_logo_white_64.png" />
+    <bitmap id="BgSolanaGradient240" filename="bg_solana_gradient_240.png" />
+    <bitmap id="BgSolanaGradient260" filename="bg_solana_gradient_260.png" />
 </drawables>
