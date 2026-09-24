@@ -349,20 +349,31 @@ class SolanaEpochView extends WatchUi.WatchFace {
         dc.drawText(centreX, yCentre - Graphics.getFontHeight(font) / 2, font, text,
             Graphics.TEXT_JUSTIFY_CENTER);
     }
-    //! Draw a vertical Solana-style gradient (approximate, palette-snapped).
-    //! Top = green/teal, bottom = purple.
+    //! Draw a simple banded Solana-style gradient with palette-safe colours.
+    //! Uses horizontal bands for speed/reliability on MIP displays.
     private function drawSolanaGradient(dc as Dc, width as Number, height as Number) as Void {
-        // Start/end colours approximated to the fenix 6 64-colour palette.
-        var topR = 0x00, topG = 0xFF, topB = 0xAA;
-        var botR = 0xAA, botG = 0x55, botB = 0xFF;
-        for (var y = 0; y < height; y += 1) {
-            var t = y.toFloat() / (height - 1).toFloat();
-            var r = snapToPalette(botR + (topR - botR) * (1.0 - t));
-            var g = snapToPalette(botG + (topG - botG) * (1.0 - t));
-            var b = snapToPalette(botB + (topB - botB) * (1.0 - t));
-            var color = (r << 16) + (g << 8) + b;
+        // Palette-safe colours (components from 00/55/AA/FF), dark → bright.
+        var colors = [
+            0xAA55FF, // purple
+            0x8855FF,
+            0x5555FF, // blue
+            0x55AAFF, // cyan-blue
+            0x00AAFF, // light cyan
+            0x00FFFF, // aqua
+            0x00FFAA, // teal/green
+            0x00FFAA
+        ];
+        var bands = colors.size();
+        if (bands < 1) {
+            bands = 1;
+        }
+        var bandH = (height + bands - 1) / bands; // ceil
+        var y = 0;
+        for (var i = 0; i < bands; i += 1) {
+            var color = colors[i] as Number;
             dc.setColor(color, color);
-            dc.drawLine(0, y, width - 1, y);
+            dc.fillRectangle(0, y, width, bandH);
+            y += bandH;
         }
     }
     //! Snap one 0..255 component to the nearest of 00/55/AA/FF.

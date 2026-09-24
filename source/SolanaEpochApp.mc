@@ -155,6 +155,12 @@ module Se {
         if (v instanceof Boolean) {
             return v as Boolean;
         }
+        if (v instanceof Number) {
+            return (v as Number) != 0;
+        }
+        if (v instanceof Float) {
+            return (v as Float) != 0.0;
+        }
         return false;
     }
 
