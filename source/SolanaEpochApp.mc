@@ -44,6 +44,7 @@ module Se {
     const PROP_RPC_URL = "RpcUrl";
     const PROP_REFRESH_MINUTES = "RefreshMinutes";
     const PROP_ACCENT_COLOR = "AccentColor";
+    const PROP_DARK_VARIANT = "DarkVariant";
 
     const DEFAULT_RPC_URL = "https://api.mainnet-beta.solana.com";
 
@@ -146,6 +147,21 @@ module Se {
     //! @return A palette colour for the progress arc and the epoch label
     public function accentColor() as Number {
         return numberOr(propertyValue(PROP_ACCENT_COLOR), DEFAULT_ACCENT);
+    }
+    //! Whether the dark Solana-branded variant is enabled.
+    //! @return true when the gradient + white logo variant should render
+    public function darkVariant() as Boolean {
+        var v = propertyValue(PROP_DARK_VARIANT);
+        if (v instanceof Boolean) {
+            return v as Boolean;
+        }
+        if (v instanceof Number) {
+            return (v as Number) != 0;
+        }
+        if (v instanceof Float) {
+            return (v as Float) != 0.0;
+        }
+        return false;
     }
 
     //! Coerce a Storage/Properties value to a 32-bit Number.

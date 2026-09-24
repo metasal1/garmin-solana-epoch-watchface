@@ -14,4 +14,6 @@
     <string id="AccentGreen">Solana green</string>
     <string id="AccentOrange">Orange</string>
     <string id="AccentBlue">Blue</string>
+    <string id="SettingDarkVariantTitle">Dark Solana branding</string>
+    <string id="SettingDarkVariantPrompt">Use Solana gradient background + white logo.</string>
 </strings>

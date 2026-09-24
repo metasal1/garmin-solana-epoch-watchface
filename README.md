@@ -3,6 +3,10 @@
 A Connect IQ watch face for the fenix 6 family that shows how far through the current
 Solana mainnet-beta epoch the network is, and how long is left.
 
+![Classic vs Dark Solana](docs/images/mockup-classic-dark-pair.png)
+
+These are layout mockups (not device screenshots) to illustrate the two visual variants.
+
 ## What it shows
 
 ```
@@ -47,6 +51,37 @@ real hardware; the rows below follow whatever the clock row does.
 
 Every colour is an exact entry of the fenix 6 64-colour palette (each channel one of
 `00/55/AA/FF`), so nothing dithers on the MIP display.
+
+## Weather + Heart Rate variant
+
+Adds two secondary fields while keeping the existing Solana epoch UI:
+
+- Heart rate (left, FONT_XTINY): current BPM from `Activity.getActivityInfo().currentHeartRate`,
+  with a fallback to the newest `ActivityMonitor.getHeartRateHistory()` sample. Shows `--` when
+  no value is available (e.g. watch not worn).
+- Weather (right, FONT_XTINY): current temperature from Garmin Weather
+  (`Toybox.Weather.getCurrentConditions()`), rendered in the device's temperature units
+  (`System.getDeviceSettings().temperatureUnits`). Shows `--` when no conditions are available.
+
+Branding: the official Solana logomark (gradient “S” bars from `solanaLogoMark` on
+`https://solana.com/branding`) is drawn above the date line, centred, sized for the
+fenix 6/Enduro MIP displays, without covering the progress ring.
+
+Permissions: `manifest.xml` includes `Positioning` so Garmin Weather can expose a station/location
+when available. No additional permission is required for heart rate on a watch face.
+
+### Dark Solana branding (gradient + white logo)
+
+- Toggle in Settings: enable “Dark Solana branding” to use the Solana gradient background with
+  the white Solana mark above the date. The epoch UI, HR (left) and weather temperature (right)
+  remain unchanged.
+- Enduro build: same release binary; no separate target is needed. Build as usual (see
+  “Building for Enduro”), then turn on the setting on device (Garmin Express for sideloaded).
+
+Classic and Dark mockups:
+
+![Classic Enduro](docs/images/mockup-classic-enduro.png)
+![Dark Solana Enduro](docs/images/mockup-dark-enduro.png)
 
 ## Data flow
 
@@ -209,6 +244,15 @@ signatures. The release `.prg` files themselves are deterministic.
 The simulator that ships with SDK 9.2.0 is an x86-64 binary, so on an aarch64 host the
 strict type check is the only verification available. `monkeyc` itself is pure Java and
 runs fine.
+
+### Building for Enduro
+
+Enduro (original, 280×280, API level 3.4) is listed in `manifest.xml`. The build script
+includes `enduro`; to build just Enduro by hand:
+
+```sh
+$SDK/bin/monkeyc -d enduro -f monkey.jungle -o build/enduro.prg -y $KEY -r -w -l 3
+```
 
 ### Regenerating the launcher icon
 

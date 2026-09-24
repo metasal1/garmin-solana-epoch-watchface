@@ -25,4 +25,8 @@
             <listEntry value="43775">@Strings.AccentBlue</listEntry>
         </settingConfig>
     </setting>
+    <setting propertyKey="@Properties.DarkVariant" title="@Strings.SettingDarkVariantTitle"
+             prompt="@Strings.SettingDarkVariantPrompt">
+        <settingConfig type="boolean" />
+    </setting>
 </settings>

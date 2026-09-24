@@ -4,4 +4,5 @@
     <property id="RefreshMinutes" type="number">15</property>
     <!-- 11163135 = 0xAA55FF, the nearest 64-colour palette entry to Solana purple 0x9945FF. -->
     <property id="AccentColor" type="number">11163135</property>
+    <property id="DarkVariant" type="boolean">false</property>
 </properties>

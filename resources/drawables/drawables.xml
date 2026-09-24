@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <drawables>
     <bitmap id="LauncherIcon" filename="launcher_icon.png" />
+    <bitmap id="SolanaLogo" filename="solana_logo.png" />
+    <bitmap id="SolanaLogoWhite48" filename="solana_logo_white_48.png" />
 </drawables>

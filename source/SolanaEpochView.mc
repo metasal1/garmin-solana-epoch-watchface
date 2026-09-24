@@ -19,6 +19,10 @@ import Toybox.System;
 import Toybox.Time;
 import Toybox.Time.Gregorian;
 import Toybox.WatchUi;
+import Toybox.Activity;
+import Toybox.ActivityMonitor;
+import Toybox.Weather;
+import Toybox.Math;
 
 class SolanaEpochView extends WatchUi.WatchFace {
 
@@ -151,9 +155,15 @@ class SolanaEpochView extends WatchUi.WatchFace {
             }
         }
 
-        // ---- Ring -----------------------------------------------------------------
-        dc.setColor($.Se.COLOR_BG, $.Se.COLOR_BG);
-        dc.clear();
+        // ---- Background and ring -------------------------------------------------
+        var isDark = $.Se.darkVariant();
+        if (isDark) {
+            // Procedural gradient only to keep memory budget small on Enduro.
+            drawSolanaGradient(dc, width, height);
+        } else {
+            dc.setColor($.Se.COLOR_BG, $.Se.COLOR_BG);
+            dc.clear();
+        }
         dc.setPenWidth(penWidth);
         dc.setColor($.Se.COLOR_TRACK, Graphics.COLOR_TRANSPARENT);
         dc.drawCircle(centreX, centreY, radius);
@@ -164,7 +174,7 @@ class SolanaEpochView extends WatchUi.WatchFace {
             // Full circle. Also the only safe way to render a sweep that rounds up to
             // 360: drawArc() with equal start and end angles draws a complete circle,
             // so feeding it 90..90 would be indistinguishable from "no progress at all".
-            dc.setColor(_accent, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(isDark ? $.Se.COLOR_PRIMARY : _accent, Graphics.COLOR_TRANSPARENT);
             dc.drawCircle(centreX, centreY, radius);
         } else if (sweep > 0) {
             // 0 degrees is 3 o'clock, so 12 o'clock is 90 and clockwise means counting
@@ -173,7 +183,7 @@ class SolanaEpochView extends WatchUi.WatchFace {
             if (endDegree < 0) {
                 endDegree += 360;
             }
-            dc.setColor(_accent, Graphics.COLOR_TRANSPARENT);
+            dc.setColor(isDark ? $.Se.COLOR_PRIMARY : _accent, Graphics.COLOR_TRANSPARENT);
             dc.drawArc(centreX, centreY, radius, Graphics.ARC_CLOCKWISE, 90, endDegree);
         }
         dc.setPenWidth(1);
@@ -184,8 +194,34 @@ class SolanaEpochView extends WatchUi.WatchFace {
         // assumed font metric can overlap two rows.
         var clockInfo = Gregorian.info(Time.now(), Time.FORMAT_MEDIUM);
 
-        drawRow(dc, centreX, centreY - (height * 0.27).toNumber(),
-            Graphics.FONT_XTINY, dateString(clockInfo), $.Se.COLOR_SECONDARY);
+        // Top row (date), with a small logo above it.
+        var dateY = centreY - (height * 0.27).toNumber();
+        do {
+            // Draw the project mark above the date, centred, kept clear of the ring.
+            var res = null as Object?;
+            if (isDark) {
+                // Single small white logo to minimise resource size.
+                res = WatchUi.loadResource(Rez.Drawables.SolanaLogoWhite48);
+            } else {
+                res = WatchUi.loadResource(Rez.Drawables.SolanaLogo);
+            }
+            var bmp = null as WatchUi.BitmapResource?;
+            if (res instanceof WatchUi.BitmapResource) {
+                bmp = res as WatchUi.BitmapResource;
+            }
+            if (bmp != null) {
+                var lw = (bmp as WatchUi.BitmapResource).getWidth();
+                var lh = (bmp as WatchUi.BitmapResource).getHeight();
+                var xLeft = centreX - lw / 2;
+                var yTop = dateY - (width / 70) - lh; // one gap above the date
+                if (yTop < 2) {
+                    yTop = 2;
+                }
+                dc.drawBitmap(xLeft, yTop, bmp as WatchUi.BitmapResource);
+            }
+        } while (false);
+        drawRow(dc, centreX, dateY, Graphics.FONT_XTINY, dateString(clockInfo),
+            isDark ? $.Se.COLOR_PRIMARY : $.Se.COLOR_SECONDARY);
 
         // FIRST THING TO CHECK ON REAL HARDWARE: the clock's vertical placement.
         // FONT_NUMBER_* glyph boxes are reported to carry more padding above the ascent
@@ -200,7 +236,8 @@ class SolanaEpochView extends WatchUi.WatchFace {
 
         var epochHeight = Graphics.getFontHeight(Graphics.FONT_SMALL);
         drawRow(dc, centreX, rowTop + epochHeight / 2, Graphics.FONT_SMALL,
-            _haveData ? "EPOCH " + _epoch.format("%d") : "EPOCH --", _accent);
+            _haveData ? "EPOCH " + _epoch.format("%d") : "EPOCH --",
+            isDark ? $.Se.COLOR_PRIMARY : _accent);
         rowTop += epochHeight + gap;
 
         var countdown = "no data";
@@ -233,6 +270,66 @@ class SolanaEpochView extends WatchUi.WatchFace {
         var statusHeight = Graphics.getFontHeight(Graphics.FONT_XTINY);
         drawRow(dc, centreX, rowTop + statusHeight / 2, Graphics.FONT_XTINY,
             status, statusColor);
+        // ---- Secondary fields: Heart rate (left) and Weather (right) -------------
+        var smallFont = Graphics.FONT_XTINY;
+        var smallHeight = Graphics.getFontHeight(smallFont);
+        var extrasY = rowTop + smallHeight / 2 + gap;
+
+        // Heart rate: prefer Activity.Info.currentHeartRate; fall back to last history sample.
+        var hrText = "--" as String;
+        var actInfo = Activity.getActivityInfo();
+        if (actInfo != null) {
+            var curHr = actInfo.currentHeartRate;
+            if (curHr instanceof Number) {
+                hrText = (curHr as Number).format("%d");
+            }
+        }
+        if (hrText == "--") {
+            var itr = ActivityMonitor.getHeartRateHistory(1, true);
+            if (itr != null) {
+                var sample = itr.next();
+                if (sample != null) {
+                    var sHr = sample.heartRate;
+                    if (sHr instanceof Number && (sHr as Number) != ActivityMonitor.INVALID_HR_SAMPLE) {
+                        hrText = (sHr as Number).format("%d");
+                    }
+                }
+            }
+        }
+
+        // Weather: temperature from Garmin Weather cache (Celsius by default).
+        var weatherText = "--" as String;
+        var cc = Weather.getCurrentConditions();
+        if (cc != null) {
+            var t = cc.temperature;
+            var tempC = 0.0 as Float;
+            var haveTemp = false;
+            if (t instanceof Float) {
+                tempC = t as Float;
+                haveTemp = true;
+            } else if (t instanceof Number) {
+                tempC = (t as Number).toFloat();
+                haveTemp = true;
+            }
+            if (haveTemp) {
+                var units = System.getDeviceSettings().temperatureUnits;
+                var disp = tempC;
+                if (units == System.UNIT_STATUTE) {
+                    disp = tempC * 9.0 / 5.0 + 32.0;
+                }
+                var ti = Math.round(disp).toNumber();
+                weatherText = ti.format("%d") + "°";
+            }
+        }
+
+        // Draw aligned near the edges so they do not cover the ring.
+        var pad = width / 14;
+        if (pad < 10) {
+            pad = 10;
+        }
+        dc.setColor($.Se.COLOR_SECONDARY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(pad, extrasY - smallHeight / 2, smallFont, "HR " + hrText, Graphics.TEXT_JUSTIFY_LEFT);
+        dc.drawText(width - pad, extrasY - smallHeight / 2, smallFont, weatherText, Graphics.TEXT_JUSTIFY_RIGHT);
     }
 
     //! Draw one centre-justified row of text.
@@ -251,6 +348,58 @@ class SolanaEpochView extends WatchUi.WatchFace {
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
         dc.drawText(centreX, yCentre - Graphics.getFontHeight(font) / 2, font, text,
             Graphics.TEXT_JUSTIFY_CENTER);
+    }
+    //! Draw a simple banded Solana-style gradient with palette-safe colours.
+    //! Uses horizontal bands for speed/reliability on MIP displays.
+    private function drawSolanaGradient(dc as Dc, width as Number, height as Number) as Void {
+        // Palette-safe colours (components from 00/55/AA/FF), dark → bright.
+        var colors = [
+            0xAA55FF, // purple
+            0x8855FF,
+            0x5555FF, // blue
+            0x55AAFF, // cyan-blue
+            0x00AAFF, // light cyan
+            0x00FFFF, // aqua
+            0x00FFAA, // teal/green
+            0x00FFAA
+        ];
+        var bands = colors.size();
+        if (bands < 1) {
+            bands = 1;
+        }
+        var bandH = (height + bands - 1) / bands; // ceil
+        var y = 0;
+        for (var i = 0; i < bands; i += 1) {
+            var color = colors[i] as Number;
+            dc.setColor(color, color);
+            dc.fillRectangle(0, y, width, bandH);
+            y += bandH;
+        }
+    }
+    //! Snap one 0..255 component to the nearest of 00/55/AA/FF.
+    private function snapToPalette(value as Float) as Number {
+        var v = value;
+        if (v < 0.0) {
+            v = 0.0;
+        }
+        if (v > 255.0) {
+            v = 255.0;
+        }
+        var candidates = [0, 85, 170, 255];
+        var best = 0;
+        var bestDiff = 9999.0;
+        for (var i = 0; i < candidates.size(); i += 1) {
+            var c = (candidates[i] as Number).toFloat();
+            var d = c - v;
+            if (d < 0.0) {
+                d = -d;
+            }
+            if (d < bestDiff) {
+                bestDiff = d;
+                best = candidates[i] as Number;
+            }
+        }
+        return best;
     }
 
     //! Format the date line, e.g. "THU 18 SEP".
