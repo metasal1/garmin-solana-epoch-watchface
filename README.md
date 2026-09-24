@@ -48,6 +48,20 @@ real hardware; the rows below follow whatever the clock row does.
 Every colour is an exact entry of the fenix 6 64-colour palette (each channel one of
 `00/55/AA/FF`), so nothing dithers on the MIP display.
 
+## Weather + Heart Rate variant
+
+Adds two secondary fields while keeping the existing Solana epoch UI:
+
+- Heart rate (left, FONT_XTINY): current BPM from `Activity.getActivityInfo().currentHeartRate`,
+  with a fallback to the newest `ActivityMonitor.getHeartRateHistory()` sample. Shows `--` when
+  no value is available (e.g. watch not worn).
+- Weather (right, FONT_XTINY): current temperature from Garmin Weather
+  (`Toybox.Weather.getCurrentConditions()`), rendered in the device's temperature units
+  (`System.getDeviceSettings().temperatureUnits`). Shows `--` when no conditions are available.
+
+Permissions: `manifest.xml` includes `Positioning` so Garmin Weather can expose a station/location
+when available. No additional permission is required for heart rate on a watch face.
+
 ## Data flow
 
 A watch face cannot make HTTP requests from the foreground, so:
@@ -209,6 +223,15 @@ signatures. The release `.prg` files themselves are deterministic.
 The simulator that ships with SDK 9.2.0 is an x86-64 binary, so on an aarch64 host the
 strict type check is the only verification available. `monkeyc` itself is pure Java and
 runs fine.
+
+### Building for Enduro
+
+Enduro (original, 280×280, API level 3.4) is listed in `manifest.xml`. The build script
+includes `enduro`; to build just Enduro by hand:
+
+```sh
+$SDK/bin/monkeyc -d enduro -f monkey.jungle -o build/enduro.prg -y $KEY -r -w -l 3
+```
 
 ### Regenerating the launcher icon
 
