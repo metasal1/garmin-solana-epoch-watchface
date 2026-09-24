@@ -3,6 +3,10 @@
 A Connect IQ watch face for the fenix 6 family that shows how far through the current
 Solana mainnet-beta epoch the network is, and how long is left.
 
+![Classic vs Dark Solana](docs/images/mockup-classic-dark-pair.png)
+
+These are layout mockups (not device screenshots) to illustrate the two visual variants.
+
 ## What it shows
 
 ```
@@ -73,6 +77,11 @@ when available. No additional permission is required for heart rate on a watch f
   remain unchanged.
 - Enduro build: same release binary; no separate target is needed. Build as usual (see
   “Building for Enduro”), then turn on the setting on device (Garmin Express for sideloaded).
+
+Classic and Dark mockups:
+
+![Classic Enduro](docs/images/mockup-classic-enduro.png)
+![Dark Solana Enduro](docs/images/mockup-dark-enduro.png)
 
 ## Data flow
 
