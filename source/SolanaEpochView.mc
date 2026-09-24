@@ -192,16 +192,20 @@ class SolanaEpochView extends WatchUi.WatchFace {
         var dateY = centreY - (height * 0.27).toNumber();
         do {
             // Draw the project mark above the date, centred, kept clear of the ring.
-            var logo = WatchUi.loadResource(Rez.Drawables.LauncherIcon);
-            if (logo != null) {
-                var lw = logo.getWidth();
-                var lh = logo.getHeight();
+            var res = WatchUi.loadResource(Rez.Drawables.LauncherIcon);
+            var bmp = null as WatchUi.BitmapResource?;
+            if (res instanceof WatchUi.BitmapResource) {
+                bmp = res as WatchUi.BitmapResource;
+            }
+            if (bmp != null) {
+                var lw = (bmp as WatchUi.BitmapResource).getWidth();
+                var lh = (bmp as WatchUi.BitmapResource).getHeight();
                 var xLeft = centreX - lw / 2;
                 var yTop = dateY - (width / 70) - lh; // one gap above the date
                 if (yTop < 2) {
                     yTop = 2;
                 }
-                dc.drawBitmap(xLeft, yTop, logo);
+                dc.drawBitmap(xLeft, yTop, bmp as WatchUi.BitmapResource);
             }
         } while (false);
         drawRow(dc, centreX, dateY, Graphics.FONT_XTINY, dateString(clockInfo), $.Se.COLOR_SECONDARY);
