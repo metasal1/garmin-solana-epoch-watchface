@@ -192,7 +192,7 @@ class SolanaEpochView extends WatchUi.WatchFace {
         var dateY = centreY - (height * 0.27).toNumber();
         do {
             // Draw the project mark above the date, centred, kept clear of the ring.
-            var res = WatchUi.loadResource(Rez.Drawables.LauncherIcon);
+            var res = WatchUi.loadResource(Rez.Drawables.SolanaLogo);
             var bmp = null as WatchUi.BitmapResource?;
             if (res instanceof WatchUi.BitmapResource) {
                 bmp = res as WatchUi.BitmapResource;
